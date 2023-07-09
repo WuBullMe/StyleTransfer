@@ -158,6 +158,8 @@ def setup_style_transfer(kwds):
     
     params['logs'] = kwds.get('logs', False)
     
+    params['steps_per_epoch'] = kwds.get('steps_per_epoch', 5)
+    
     return params
 
 def print_log(log, params, end="\n", cond=True):
