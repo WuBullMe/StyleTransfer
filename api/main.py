@@ -1,14 +1,23 @@
 from fastapi import FastAPI
 from fastapi import File, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from PIL import Image
 import io
 
 import model
-# from response import Response, Request
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update this to limit origins to a specific list if necessary
+    allow_credentials=True,
+    allow_methods=["*"],  # Update this to limit HTTP methods if necessary
+    allow_headers=["*"],  # Update this to limit headers if necessary
+)
+
 
 @app.get("/")
 def home():
@@ -31,61 +40,13 @@ async def style_transfer(
     content_image.save("content_image.png")
     style_image.save("style_image.png")
     
-    result_image = Image.fromarray(model.style_transfer(
-        content_image,  
-        style_image,
-        image_size,
-        timeout_sec,
-    ))
-    # img_byte_arr = io.BytesIO()
-    # result_image.save(img_byte_arr, format='PNG')
-    # img_byte_arr = img_byte_arr.getvalue()
+    result_image, _ = model.style_transfer(
+        content_image_path="content_image.png",
+        style_image_path="style_image.png",
+        image_size=image_size,
+        timeout_sec=timeout_sec,
+        logs=True,
+    )
     result_image.save("result.png")
     
     return FileResponse("result.png")
-
-
-# remove this
-from pyngrok import ngrok
-import nest_asyncio
-import uvicorn
-
-port = 8000
-
-ngrok_tunnel = ngrok.connect(port)
-print(f"Public URL: {ngrok_tunnel.public_url}")
-nest_asyncio.apply()
-uvicorn.run(app, port=port)
-# remove this
-
-
-# @app.post("/style_transfer")
-# async def style_transfer(
-#         content_image: UploadFile = File(...),
-#         style_image: UploadFile = File(...),
-#         model_name: str = None,
-#         model_version: str = None
-#     ):
-#     # Read the uploaded files
-#     content_image = Image.open(io.BytesIO(await content_image.read()))
-#     style_image = Image.open(io.BytesIO(await style_image.read()))
-    
-#     # Perform style transfer or any other image processing using the provided model
-#     result_image = content_image
-
-#     import base64
-#     from fastapi.responses import JSONResponse
-#     # Convert the result image to bytes
-#     img_byte_arr = io.BytesIO()
-#     result_image.save(img_byte_arr, format='PNG')
-#     img_byte_arr.seek(0)
-#     img_data = base64.b64encode(img_byte_arr.read()).decode("utf-8")
-    
-#     # Prepare the response
-#     response_data = {
-#         "model_name": model_name,
-#         "model_version": model_version,
-#         "result_image": img_data,
-#     }
-    
-#     return JSONResponse(content=response_data)

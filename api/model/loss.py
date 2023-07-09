@@ -1,48 +1,85 @@
 import torch
+import torch.nn as nn
 
-class ContentStyleLoss(torch.nn.Module):
-    def __init__(
-            self,
-            alpha,
-            beta,
-            all_conv, 
-            content_conv,
-            style_conv,
-        ):
-        super(ContentStyleLoss, self).__init__()
-        self.alpha = alpha
-        self.beta = beta
-        self.all_conv = all_conv
-        self.content_conv = content_conv
-        self.style_conv = style_conv
+# Content loss
+class ContentLoss(nn.Module):
+    def __init__(self, weight, normalize=True):
+        super(ContentLoss, self).__init__()
         
+        self.weight = weight
+        self.normalize = normalize
         
-    def content_loss(self, gen_feat, content_feat):
-        return torch.mean((gen_feat - content_feat) ** 2)
+        self.mode = 'None'
+        self.criterion = nn.MSELoss()
+        self.target = torch.Tensor()
+        self.loss = 0
+        
+    def forward(self, input):
+        # calculate the loss while passing through this layer
+        if self.mode == 'loss':
+            loss = self.criterion(input, self.target)
+            if self.normalize:
+                loss = ScaleGradients.apply(loss, self.weight)
+            self.loss = self.weight * loss
+        elif self.mode == 'capture':
+            self.target = input.detach()
+        
+        return input
+
+
+class StyleLoss(nn.Module):
+    def __init__(self, weight, normalize=True):
+        super(StyleLoss, self).__init__()
+        
+        self.weight = weight
+        self.normalize = normalize
+        
+        self.mode = 'None'
+        self.criterion = nn.MSELoss()
+        self.target = torch.Tensor()
+        self.loss = 0
     
-    def style_loss(self, gen_feat, style_feat):
-        batch_size, channel, height, width = gen_feat.shape
-
-        G = torch.mm(
-            gen_feat.view(channel, height * width),
-            gen_feat.view(channel, height * width).t()
-        )
-
-        A = torch.mm(
-            style_feat.view(channel, height * width),
-            style_feat.view(channel, height * width).t()
-        )
-        return torch.mean((G - A) ** 2)
+    def cal_gram_matrix(self, input):
+        _, C, H, W = input.size()
+        x_flat = input.view(C, H * W)
+        return torch.mm(x_flat, x_flat.t())
     
-    def forward(self, gen_feat, content_feat, style_feat):
-        style_loss_total = 0
-        content_loss_total = 0
-        for i in range(len(self.all_conv)):
-            if self.all_conv[i] in self.content_conv:
-                content_loss_total += self.content_loss(gen_feat[i], content_feat[i])
+    def forward(self, input):
+        # calculate Grad Matrix
+        self.G = self.cal_gram_matrix(input)
+        self.G = self.G.div(input.nelement())
+        
+        if self.mode == 'loss':
+            loss = self.criterion(self.G, self.target)
+            if self.normalize:
+                loss = ScaleGradients.apply(loss, self.weight)
+            self.loss = self.weight * loss
+        elif self.mode == 'capture':
+            self.target = self.G.detach()
+        
+        return input
+    
+class TVLoss(nn.Module):
+    def __init__(self, weight):
+        super(TVLoss, self).__init__()
+        self.weight = weight
+        
+    def forward(self, input):
+        x_diff = input[:,:,1:,:] - input[:,:,:-1,:]
+        y_diff = input[:,:,:,1:] - input[:,:,:,:-1]
+        
+        self.loss = self.weight * (torch.sum(torch.abs(x_diff)) + torch.sum(torch.abs(y_diff)))
+        return input
+    
+    
+class ScaleGradients(torch.autograd.Function):
+    @staticmethod
+    def forward(self, input_tensor, weight):
+        self.weight = weight
+        return input_tensor
 
-            if self.all_conv[i] in self.style_conv:
-                style_loss_total += self.style_loss(gen_feat[i], style_feat[i])
-
-        return (self.alpha * content_loss_total + self.beta * style_loss_total)
-
+    @staticmethod
+    def backward(self, grad_output):
+        grad_output = grad_output.clone()
+        grad_output /= (torch.norm(grad_output, keepdim=True) + 1e-8)
+        return self.weight * self.weight * grad_output, None

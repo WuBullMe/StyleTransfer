@@ -1,35 +1,52 @@
 import time
-import numpy as np
+import torch
 
-from .utils import denormalize
+from .utils import postprocess
+from .utils import print_log
 
 def train(
     model,
-    optimizer,
-    criterion,
-    content_image,
-    style_image,
     gen_image,
-    epochs,
-    device,
-    timeout_sec,
+    params,
 ):
-    start = time.time()
-    for _ in range(epochs):
-        gen_feat = model(gen_image)
-        content_feat = model(content_image)
-        style_feat = model(style_image)
-
+    optim_state = {
+        "tolerance_change": -1,
+        "tolerance_grad": -1,
+    }
+    optimizer = torch.optim.LBFGS([gen_image], **optim_state)
+    
+    def closure():
         optimizer.zero_grad()
-        loss = criterion(gen_feat, content_feat, style_feat)
-
-        loss.backward()
-        optimizer.step()
+        model(gen_image)
         
-        if time.time() - start > timeout_sec:
+        loss = 0
+        for loss_layer in params['content_losses']:
+            loss += loss_layer.loss.to(params['device'])
+        
+        for loss_layer in params['style_losses']:
+            loss += loss_layer.loss.to(params['device'])
+        
+        loss.backward()
+        return loss
+    
+    cur_epoch = 0
+    start = time.time()
+    for epoch in range(params['epochs']):
+        optimizer.step(closure)
+        
+        progress = (epoch + 1) / params['epochs'] * 100
+        progress_bar = f"[{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}] ({epoch+1}/{params['epochs']}) {progress:.1f}%"
+        print_log(progress_bar, params, end="\r")
+        
+        cur_epoch = epoch+1
+        elapsed_time = time.time() - start
+        if elapsed_time > params['timeout_sec']:
             break
     
-    gen_image = denormalize(gen_image.detach(), device)
-    gen_image = gen_image.squeeze(0).permute(1, 2, 0).cpu()
-    gen_image = (gen_image.numpy().clip(0, 1) * 255).astype(np.uint8)
-    return gen_image
+    print_log("\nTraining Finished", params)
+    
+    # add 'completed_epochs': 'cur_epochs/epochs', 'time': end - start
+    params['elapsed_time'] = elapsed_time
+    params['completed_epochs'] = cur_epoch
+    
+    return postprocess(gen_image)
