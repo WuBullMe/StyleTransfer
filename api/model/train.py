@@ -9,7 +9,9 @@ def train(
     gen_image,
     params,
 ):
+    steps_per_epoch = params['steps_per_epoch']
     optim_state = {
+        "max_iter": steps_per_epoch,
         "tolerance_change": -1,
         "tolerance_grad": -1,
     }
@@ -31,14 +33,15 @@ def train(
     
     cur_epoch = 0
     start = time.time()
-    for epoch in range(params['epochs']):
+    for epoch in range(int(params['epochs'] / steps_per_epoch)):
         optimizer.step(closure)
+        epoch = min((epoch + 1) * steps_per_epoch, params['epochs'])
         
-        progress = (epoch + 1) / params['epochs'] * 100
-        progress_bar = f"[{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}] ({epoch+1}/{params['epochs']}) {progress:.1f}%"
+        progress = epoch / params['epochs'] * 100
+        progress_bar = f"[{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}] ({epoch}/{params['epochs']}) {progress:.1f}%"
         print_log(progress_bar, params, end="\r")
         
-        cur_epoch = epoch+1
+        cur_epoch = epoch
         elapsed_time = time.time() - start
         if elapsed_time > params['timeout_sec']:
             break
