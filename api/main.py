@@ -32,21 +32,21 @@ async def style_transfer(
         model_name: str=None,
         model_version: str=None,
         timeout_sec: int=5,
-        image_size:int=256,
+        image_size: int=256,
     ):
     # read the uploaded images and save them
     content_image = Image.open(io.BytesIO(await content_image.read()))
     style_image = Image.open(io.BytesIO(await style_image.read()))
-    content_image.save("content_image.png")
-    style_image.save("style_image.png")
+    content_image.save("assets/content_image.png")
+    style_image.save("assets/style_image.png")
     
     result_image, _ = model.style_transfer(
-        content_image_path="content_image.png",
-        style_image_path="style_image.png",
+        content_image_path="assets/content_image.png",
+        style_image_path="assets/style_image.png",
         image_size=image_size,
         timeout_sec=timeout_sec,
         logs=True,
     )
-    result_image.save("result.png")
+    result_image.save("assets/result.png")
     
-    return FileResponse("result.png")
+    return FileResponse("assets/result.png")

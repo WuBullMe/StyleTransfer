@@ -5,7 +5,10 @@ from torchvision import transforms
 from PIL import Image
 
 # import loss functions
-from .loss import ContentLoss, StyleLoss, TVLoss
+from model.loss import ContentLoss, StyleLoss, TVLoss
+
+# import check_type to check every parameter
+import model.check_param as check_param
 
 # Preprocess the image giving it to the model
 # Read image, resize, rescale to [0, 1] then to [0, 255]
@@ -129,38 +132,41 @@ def setup_style_transfer(kwds):
     params.update(kwds)
     
     # image_size: default 256
-    params['image_size'] = kwds.get('image_size', 256)
-    params['image_size'] = (params['image_size'], params['image_size'])
+    params['image_size'] = check_param.image_size_(kwds.get('image_size', 256))
     
     # timeout_sec: default 5 sec
-    params['timeout_sec'] = kwds.get('timeout_sec', 5)
+    params['timeout_sec'] = check_param.timeout_sec_(kwds.get('timeout_sec', 5))
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    params['device'] = kwds.get('device', device)
+    params['device'] = check_param.device_(kwds.get('device', device))
     
     # number of epochs: default 500
-    params['epochs'] = kwds.get('epochs', 500)
+    params['epochs'] = check_param.epochs_(kwds.get('epochs', 500))
     
     # content_weight: default 5
-    params['content_weight'] = kwds.get('content_weight', 5e0)
+    params['content_weight'] = check_param.content_weight_(kwds.get('content_weight', 5e0))
     
     # style_weight: default 1e3
-    params['style_weight'] = kwds.get('style_weight', 1e3)
+    params['style_weight'] = check_param.style_weight_(kwds.get('style_weight', 1e3))
     
     # tv_weight: default 1e-5
-    params['tv_weight'] = kwds.get('tv_weight', 1e-5)
+    params['tv_weight'] = check_param.tv_weight_(kwds.get('tv_weight', 1e-5))
     
     # content_layers: default 'relu4_2' (same as in article)
-    params['content_layers'] = kwds.get('content_layers', ['relu4_2'])
+    params['content_layers'] = check_param.content_layers_(kwds.get('content_layers', ['relu4_2']))
     
     # style_layers: default ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'] (same as in article)
-    params['style_layers'] = kwds.get('style_layers', ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'])
+    params['style_layers'] = check_param.style_layers_(kwds.get('style_layers', ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']))
     
-    params['logs'] = kwds.get('logs', False)
+    # show logs while program is running or not: default False
+    params['logs'] = check_param.logs_(kwds.get('logs', False))
     
-    params['steps_per_epoch'] = kwds.get('steps_per_epoch', 5)
+    params['steps_per_epoch'] = check_param.steps_per_epoch_(kwds.get('steps_per_epoch', 5), params['epochs'])
+    
+    params['from_path'] = check_param.from_path_(kwds.get('from_path', True))
     
     return params
+
 
 def print_log(log, params, end="\n", cond=True):
     if cond and params.get("logs", False):
