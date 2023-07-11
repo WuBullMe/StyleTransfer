@@ -10,16 +10,16 @@ from model.loss import ContentLoss, StyleLoss, TVLoss
 # import check_type to check every parameter
 import model.check_param as check_param
 
-# Preprocess the image giving it to the model
+# Preprocess the image before giving it to the model
 # Read image, resize, rescale to [0, 1] then to [0, 255]
 # and normalize
-def preprocess(image_name, image_size):
-    try:
-        image = Image.open(image_name).convert('RGB')
-    except:
-        raise IOError(f"Can't open {image_name} file")
+def preprocess(image, params):
+    if params['from_path']:
+        # try to open the given file by path
+        image = Image.open(image).convert('RGB')
     
-    loader = transforms.Compose([transforms.Resize(image_size), transforms.ToTensor()])
+    
+    loader = transforms.Compose([transforms.Resize(params['image_size']), transforms.ToTensor()])
     normalize = transforms.Compose([
         transforms.Normalize(
             mean=[123.68, 116.779, 103.939],

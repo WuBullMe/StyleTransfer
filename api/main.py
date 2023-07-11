@@ -44,16 +44,19 @@ async def style_transfer(
     # read the uploaded images and save them
     content_image = Image.open(io.BytesIO(await content_image.read()))
     style_image = Image.open(io.BytesIO(await style_image.read()))
-    content_image.save("assets/content_image.png")
-    style_image.save("assets/style_image.png")
+    
+    # No need to save images if you will not pass images by path
+    # Save time and memory :)
+    # content_image.save("assets/content_image.png")
+    # style_image.save("assets/style_image.png")
     
     image_size = (image_height, image_width)
     if image_width is None:
         image_size = (image_height, image_height)
     
     result_image, _ = model.style_transfer(
-        content_image_path="assets/content_image.png",
-        style_image_path="assets/style_image.png",
+        content_image=content_image,
+        style_image=style_image,
         image_size=image_size,
         timeout_sec=timeout_sec,
         epochs=epochs,
@@ -61,7 +64,7 @@ async def style_transfer(
         style_weight=style_weight,
         tv_weight=tv_weight,
         logs=True,
-        from_path=True,
+        from_path=False,
     )
     result_image.save("assets/result.png")
     

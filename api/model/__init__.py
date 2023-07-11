@@ -19,18 +19,17 @@ __version__ = "1.0.0"
 __name__ = "style_transfer_model"
 
 def style_transfer(
-    content_image_path,
-    style_image_path,
+    content_image,
+    style_image,
     **kwds,
 ):
-    try:
-        # configure the received parameters
-        params = setup_style_transfer(kwds)
-    except:
-        raise ValueError("Can't setup style transfer, maybe itcorrect parameter")
+    # configure the received parameters
+    # This function may throw lots of exceptions trying to setup parameters
+    # So pass parameters carefully
+    params = setup_style_transfer(kwds)
     
-    content_image = preprocess(content_image_path, params['image_size']).to(params["device"])
-    style_image = preprocess(style_image_path, params['image_size']).to(params["device"])
+    content_image = preprocess(content_image, params).to(params["device"])
+    style_image = preprocess(style_image, params).to(params["device"])
     gen_image = content_image.clone().requires_grad_(True)
 
     print_log("Building the model...", params, end="")
