@@ -73,7 +73,7 @@ def content_layers_(content_layers):
     )
     _check_type(content_layers, supported_types, "content_layers")
     if type(content_layers) is str:
-        content_layers = (content_layers)
+        content_layers = (content_layers,)
     
     [_check_allowed(layer, allowed_layers, f"{layer} in content_layers") for layer in content_layers]
     
@@ -90,7 +90,7 @@ def style_layers_(style_layers):
     )
     _check_type(style_layers, supported_types, "style_layers")
     if type(style_layers) is str:
-        style_layers = (style_layers)
+        style_layers = (style_layers,)
     
     [_check_allowed(layer, allowed_layers, f"{layer} in style_layers") for layer in style_layers]
     

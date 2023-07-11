@@ -31,14 +31,13 @@ def home():
 async def style_transfer(
         content_image: UploadFile = File(...),
         style_image: UploadFile = File(...),
-        image_size: Union[int, List, Tuple] = 256,
+        image_height: int = 256,
+        image_width: Union[int, None] = 256,
         timeout_sec: int = 5,
         epochs: int = 500,
         content_weight: Union[int, float] = 5e0,
         style_weight: Union[int, float] = 2e2,
         tv_weight: Union[int, float] = 1e-5,
-        content_layers: Union[List, Tuple] = ('relu4_2'),
-        style_layers: Union[List, Tuple] = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'),
         model_name: str = None,
         model_version: str = None,
     ):
@@ -47,6 +46,10 @@ async def style_transfer(
     style_image = Image.open(io.BytesIO(await style_image.read()))
     content_image.save("assets/content_image.png")
     style_image.save("assets/style_image.png")
+    
+    image_size = (image_height, image_width)
+    if image_width is None:
+        image_size = (image_height, image_height)
     
     result_image, _ = model.style_transfer(
         content_image_path="assets/content_image.png",
@@ -57,8 +60,6 @@ async def style_transfer(
         content_weight=content_weight,
         style_weight=style_weight,
         tv_weight=tv_weight,
-        content_layers=content_layers,
-        style_layers=style_layers,
         logs=True,
         from_path=True,
     )
