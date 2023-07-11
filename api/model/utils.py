@@ -153,10 +153,10 @@ def setup_style_transfer(kwds):
     params['tv_weight'] = check_param.tv_weight_(kwds.get('tv_weight', 1e-5))
     
     # content_layers: default 'relu4_2' (same as in article)
-    params['content_layers'] = check_param.content_layers_(kwds.get('content_layers', ['relu4_2']))
+    params['content_layers'] = check_param.content_layers_(kwds.get('content_layers', ('relu4_2')))
     
     # style_layers: default ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'] (same as in article)
-    params['style_layers'] = check_param.style_layers_(kwds.get('style_layers', ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']))
+    params['style_layers'] = check_param.style_layers_(kwds.get('style_layers', ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')))
     
     # show logs while program is running or not: default False
     params['logs'] = check_param.logs_(kwds.get('logs', False))
