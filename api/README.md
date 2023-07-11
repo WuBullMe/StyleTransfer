@@ -9,33 +9,8 @@ We created a API that takes two image (content_image, style_image) and using the
 
 The API takes content and style image, and lots of different parameters (query), the main parameters you might want to change is `image_size`, `timeout_sec`, `content_weight`, `style_weight`, `tv_weight`, `epochs`. You can find full list of parameters in `model.utils:setup_style_transfer()`.
 
-# Demonstration (content/style/generated image)
-## Example1
-<img src="examples/content1.jpg">
-<img src="examples/style1.jpg">
-<img src="examples/result1_1.png">
-
-## Example2
-<img src="examples/content2.jpg">
-<img src="examples/style2.jpg">
-<img src="examples/result2_2.png">
-
-## Example3
-<img src="examples/content3.jpg">
-<img src="examples/style3.jpg">
-<img src="examples/result3_3.png">
-
-## Example4
-<img src="examples/content1.jpg">
-<img src="examples/style2.jpg">
-<img src="examples/result1_2.png">
-
-## Example5
-<img src="examples/content1.jpg">
-<img src="examples/style3.jpg">
-<img src="examples/result1_3.png">
-
-## Example6
-<img src="examples/content3.jpg">
-<img src="examples/style1.jpg">
-<img src="examples/result3_1.png">
+# Demonstration
+<img src="examples/demo1.png">
+<img src="examples/demo2.png">
+<img src="examples/demo3.png">
+<img src="examples/demo4.png">
