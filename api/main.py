@@ -3,6 +3,8 @@ from fastapi import File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from typing import Union, Optional, List, Tuple
+
 from PIL import Image
 import io
 
@@ -29,10 +31,16 @@ def home():
 async def style_transfer(
         content_image: UploadFile = File(...),
         style_image: UploadFile = File(...),
-        model_name: str=None,
-        model_version: str=None,
-        timeout_sec: int=5,
-        image_size: int=256,
+        image_size: Union[int, List, Tuple] = 256,
+        timeout_sec: int = 5,
+        epochs: int = 500,
+        content_weight: Union[int, float] = 5e0,
+        style_weight: Union[int, float] = 2e2,
+        tv_weight: Union[int, float] = 1e-5,
+        content_layers: Union[List, Tuple] = ('relu4_2'),
+        style_layers: Union[List, Tuple] = ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'),
+        model_name: str = None,
+        model_version: str = None,
     ):
     # read the uploaded images and save them
     content_image = Image.open(io.BytesIO(await content_image.read()))
@@ -45,7 +53,14 @@ async def style_transfer(
         style_image_path="assets/style_image.png",
         image_size=image_size,
         timeout_sec=timeout_sec,
+        epochs=epochs,
+        content_weight=content_weight,
+        style_weight=style_weight,
+        tv_weight=tv_weight,
+        content_layers=content_layers,
+        style_layers=style_layers,
         logs=True,
+        from_path=True,
     )
     result_image.save("assets/result.png")
     
