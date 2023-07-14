@@ -41,19 +41,16 @@ async def style_transfer(
         tv_weight: Union[int, float] = 1e-5,
         model_name: str = None,
     ):
-    # # read the uploaded images and save them
-    # content_image = Image.open(io.BytesIO(await content_image.read()))
-    # style_image = Image.open(io.BytesIO(await style_image.read()))
-    # encode the received images 
+    # decode the received images 
     try:
-        _, content_image_id, content_name = utils.decode_from_base64(
+        content_image, content_image_id, content_name = utils.decode_from_base64(
             content_image,
-            save=True
+            save=utils.from_path
         )
 
-        _, style_image_id, style_name = utils.decode_from_base64(
+        style_image, style_image_id, style_name = utils.decode_from_base64(
             style_image,
-            save=True
+            save=utils.from_path
         )
     except Exception as e:
         return {
@@ -66,18 +63,22 @@ async def style_transfer(
     if image_width is None:
         image_size = (image_height, image_height)
     
+    if utils.from_path:
+        content_image = content_name
+        style_image = style_name
+    
     try:
         result_image, params = model.style_transfer(
-            content_image=content_name,
-            style_image=style_name,
+            content_image=content_image,
+            style_image=style_image,
             image_size=image_size,
             timeout_sec=timeout_sec,
             epochs=epochs,
             content_weight=content_weight,
             style_weight=style_weight,
             tv_weight=tv_weight,
-            logs=True,
-            from_path=True,
+            logs=utils.logs,
+            from_path=utils.from_path,
         )
     except Exception as e:
         return {

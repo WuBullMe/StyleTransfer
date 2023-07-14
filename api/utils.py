@@ -2,9 +2,12 @@ import base64
 import time
 import uuid
 import io
+from PIL import Image
 
 # Parameters for the API
 root = "assets/"
+from_path = True
+logs = True
 
 def encode_to_base64(result_image):
     img_bytes_arr = io.BytesIO()
@@ -24,6 +27,7 @@ def decode_from_base64(image: str, save=False):
         with open(image_name, "wb") as f:
             f.write(image)
     
+    image = Image.open(io.BytesIO(image))
     return image, image_id, image_name
 
 
