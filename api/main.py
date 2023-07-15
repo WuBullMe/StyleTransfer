@@ -24,6 +24,7 @@ app.add_middleware(
 
 @app.get("/")
 def home():
+    utils.clean()
     text = """Welcome to the StyleTransfer API, I am alive btw."""
     return text
 
@@ -41,6 +42,7 @@ async def style_transfer(
         tv_weight: Union[int, float] = 1e-5,
         model_name: str = None,
     ):
+    utils.clean()
     # decode the received images 
     try:
         content_image, content_image_id, content_name = utils.decode_from_base64(
@@ -124,6 +126,7 @@ async def test_style_transfer(
         tv_weight: Union[int, float] = 1e-5,
         model_name: str = None,
     ):
+    utils.clean()
     try:
         # read the uploaded images and save them
         content_image = Image.open(io.BytesIO(await content_image.read()))
@@ -156,3 +159,67 @@ async def test_style_transfer(
     )
     
     return FileResponse(image_name)
+
+
+@app.get("/change_weights")
+async def change_weights(
+        content_id: str,
+        style_id: str,
+        image_height: int = 256,
+        image_width: Union[int, None] = 256,
+        timeout_sec: int = 5,
+        epochs: int = 500,
+        content_weight: Union[int, float] = 5e0,
+        style_weight: Union[int, float] = 2e2,
+        tv_weight: Union[int, float] = 1e-5,
+        model_name: str = None,
+    ):
+    utils.clean()
+    content_path = utils.root + content_id + ".png"
+    style_path = utils.root + style_id + ".png"
+    
+    image_size = (image_height, image_width)
+    if image_width is None:
+        image_size = (image_height, image_height)
+    
+    try:
+        result_image, params = model.style_transfer(
+            content_image=content_path,
+            style_image=style_path,
+            image_size=image_size,
+            timeout_sec=timeout_sec,
+            epochs=epochs,
+            content_weight=content_weight,
+            style_weight=style_weight,
+            tv_weight=tv_weight,
+            logs=utils.logs,
+            from_path=True,
+        )
+    except Exception as e:
+        return {
+            'status': 'failed',
+            'msg': 'got some exception while trying to transfer style of the given image',
+            'error': str(e),
+        }
+    
+    # remove useless parameters from `params`
+    params.pop('content_losses', None)
+    params.pop('style_losses', None)
+    params.pop('tv_losses', None)
+    params.pop('logs', None)
+    params.pop('from_path', None)
+    
+    
+    # change some `params` to avoid `ValueError` exception, while trying to
+    # call the `__dict__` for the object that is not json serializable
+    params['device'] = params['device'].type
+    
+    return {
+        'status': 'ok',
+        'msg': 'successfuly transfered the style of the image',
+        'error': 'none',
+        'params': params,
+        'content_id': content_id,
+        'style_id': style_id,
+        'image': utils.encode_to_base64(result_image),
+    }
