@@ -5,8 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class StyleService implements Service {
-  final uri = Uri.parse("https://styletransferapi-1-p0532375.deta.app/test_api");
-
   @override
   Future<Uint8List> submit({
     required Uint8List content,
@@ -18,26 +16,22 @@ class StyleService implements Service {
     required double tvWeight,
     required double styleWeight,
   }) async {
-    Map <String, dynamic> body = {
-      'content_image' : base64.encode(content),
-      'style_image' : base64.encode(style),
-      'image_height' : height,
-      'image_width' : width,
-      'epochs' : epochs,
-      'content_weight' : contentWeight,
-      'style_weight' : styleWeight,
-      'tv_weight' : tvWeight,
+    final uri = Uri.parse(
+        """https://styletransferapi-1-p0532375.deta.app/test_api?image_height=$height&image_width=$width&epochs=$epochs&content_weight=$contentWeight&style_weight=$styleWeight&tv_weight=$tvWeight""");
+    var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+    var request = http.Request('POST', uri);
+    request.bodyFields = {
+      'content_image': base64.encode(content),
+      'style_image': base64.encode(style),
     };
-    var response = await http.post(
-      uri,
-      body: jsonEncode(body),
-    );
+    request.headers.addAll(headers);
+    http.StreamedResponse response = await request.send();
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      var result = json["result"] as String;
+      final json = jsonDecode(await response.stream.bytesToString());
+      var result = json["image"] as String;
       return base64.decode(result);
     } else {
-      throw Exception();
+      throw Exception(response.statusCode);
     }
   }
 }

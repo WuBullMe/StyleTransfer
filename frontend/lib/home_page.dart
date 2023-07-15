@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:html' as html;
 
 import 'package:style_transfer/home_model.dart';
 import 'package:style_transfer/widgets/widgets.dart';
@@ -55,11 +56,28 @@ class _SelectImagesColumnState extends State<_SelectImagesColumn> {
     return result?.files.first.bytes;
   }
 
+  void downloadImage(Uint8List bytes, String filename,
+      {String extension = 'png'}) {
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.document.createElement('a') as html.AnchorElement
+      ..href = url
+      ..style.display = 'none'
+      ..download = '$filename.$extension';
+    html.document.body!.children.add(anchor);
+
+    anchor.click();
+
+    html.document.body!.children.remove(anchor);
+    html.Url.revokeObjectUrl(url);
+  }
+
   @override
   Widget build(BuildContext context) {
     var model = context.read<HomeModel>();
     var submit = context.watch<HomeModel>().content != null &&
         context.watch<HomeModel>().style != null;
+    var result = context.watch<HomeModel>().result;
     return Column(
       children: <Widget>[
         const Text(
@@ -73,7 +91,27 @@ class _SelectImagesColumnState extends State<_SelectImagesColumn> {
         ElevatedButton(
           onPressed: () async {
             var res = await pickFile();
-            model.content = res;
+            // model.content = res;
+            model.setContent(res, (width, height) {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Too high resolution'),
+                    content:
+                        Text('Your image resolution was set to ${width}x$height'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Close'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            });
           },
           child: const Text('Choose image'),
         ),
@@ -110,6 +148,15 @@ class _SelectImagesColumnState extends State<_SelectImagesColumn> {
                     : null,
                 child: const Text('Submit'),
               ),
+        const SizedBox(height: 30),
+        FilledButton(
+          onPressed: result != null
+              ? () {
+                  downloadImage(result, 'result');
+                }
+              : null,
+          child: const Text('Download'),
+        ),
       ],
     );
   }
@@ -136,7 +183,7 @@ class _ResultImageColumn extends StatelessWidget {
           const SizedBox(height: 20),
           ImageStub(
             height: 500,
-            width: 500,
+            width: 888,
             text: 'Submit your images to get the result',
             imageBytes: context.watch<HomeModel>().result,
           ),
@@ -150,15 +197,6 @@ class _ResultImageColumn extends StatelessWidget {
           const SizedBox(height: 10),
           _ControlPanel(formKey),
           const SizedBox(height: 10),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState != null &&
-                  formKey.currentState!.validate()) {
-                context.read<HomeModel>().save();
-              }
-            },
-            child: const Text('Save options'),
-          ),
         ],
       ),
     );
@@ -172,55 +210,20 @@ class _ControlPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: formKey,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          _SizeSelectors(),
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 150,
-            ),
-            child: Form(
-              child: TextFormField(
-                controller: context.read<HomeModel>().rangeController,
-                decoration: const InputDecoration(
-                  labelText: 'Range',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null) return null;
-                  try {
-                    int res = int.parse(value);
-                    if (res < 10 || res > 10000) {
-                      return 'from 10 to 10000';
-                    }
-                    return null;
-                  } catch (_) {
-                    return 'Invalid range number';
-                  }
-                },
-                onChanged: (value) {
-                  try {
-                    var res = int.parse(value);
-                    if (res >= 10 && res <= 10000) {
-                      context.read<HomeModel>().setRange(res);
-                    }
-                  } catch (_) {}
-                },
-              ),
-            ),
-          ),
-          _Sliders(),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        _SizeSelectors(formKey),
+        _Sliders(),
+      ],
     );
   }
 }
 
 class _SizeSelectors extends StatelessWidget {
-  // final formKey = GlobalKey<FormState>();
+  const _SizeSelectors(this.formKey);
+
+  final GlobalKey<FormState> formKey;
   @override
   Widget build(BuildContext context) {
     var model = context.read<HomeModel>();
@@ -228,70 +231,91 @@ class _SizeSelectors extends StatelessWidget {
       constraints: const BoxConstraints(
         maxWidth: 150,
       ),
-      child: Column(
-        children: <Widget>[
-          TextFormField(
-            controller: model.widthController,
-            decoration: const InputDecoration(
-              labelText: 'Width',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            validator: (value) {
-              if (value == null) return null;
-              try {
-                int res = int.parse(value);
-                if (res < 256 || res > 1024) {
-                  return 'from 256 to 1024';
+      child: Form(
+        key: formKey,
+        child: Column(
+          children: <Widget>[
+            TextFormField(
+              controller: model.widthController,
+              decoration: const InputDecoration(
+                labelText: 'Width',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null) return null;
+                try {
+                  int res = int.parse(value);
+                  if (res < 256 || res > 1920) {
+                    return 'from 256 to 1920';
+                  }
+                  return null;
+                } catch (_) {
+                  return 'Invalid number';
                 }
-                return null;
-              } catch (_) {
-                return 'Invalid number';
-              }
-            },
-          ),
-          const SizedBox(height: 10),
-          TextFormField(
-            controller: model.heightController,
-            decoration: const InputDecoration(
-              labelText: 'Height',
-              border: OutlineInputBorder(),
-            ),
-            textInputAction: TextInputAction.next,
-            validator: (value) {
-              if (value == null) return null;
-              try {
-                int res = int.parse(value);
-                if (res < 256 || res > 1024) {
-                  return 'from 256 to 1024';
+              },
+              onChanged: (value) {
+                if (formKey.currentState != null &&
+                    formKey.currentState!.validate()) {
+                  context.read<HomeModel>().width = int.parse(value);
                 }
-                return null;
-              } catch (_) {
-                return 'Invalid number';
-              }
-            },
-          ),
-          const SizedBox(height: 10),
-          TextFormField(
-            controller: model.epochsController,
-            decoration: const InputDecoration(
-              labelText: 'Epochs',
-              border: OutlineInputBorder(),
+              },
             ),
-            validator: (value) {
-              if (value == null) return null;
-              try {
-                int res = int.parse(value);
-                if (res < 1 || res > 5000) {
-                  return 'from 1 to 5000';
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: model.heightController,
+              decoration: const InputDecoration(
+                labelText: 'Height',
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.next,
+              validator: (value) {
+                if (value == null) return null;
+                try {
+                  int res = int.parse(value);
+                  if (res < 256 || res > 1080) {
+                    return 'from 256 to 1080';
+                  }
+                  return null;
+                } catch (_) {
+                  return 'Invalid number';
                 }
-                return null;
-              } catch (_) {
-                return 'Invalid number';
-              }
-            },
-          ),
-        ],
+              },
+              onChanged: (value) {
+                if (formKey.currentState != null &&
+                    formKey.currentState!.validate()) {
+                  context.read<HomeModel>().height = int.parse(value);
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: model.epochsController,
+              decoration: const InputDecoration(
+                labelText: 'Epochs',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null) return null;
+                try {
+                  int res = int.parse(value);
+                  if (res < 1 || res > 5000) {
+                    return 'from 1 to 5000';
+                  }
+                  return null;
+                } catch (_) {
+                  return 'Invalid number';
+                }
+              },
+              onChanged: (value) {
+                if (formKey.currentState != null &&
+                    formKey.currentState!.validate()) {
+                  context.read<HomeModel>().epochs = int.parse(value);
+                }
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -303,28 +327,28 @@ class _Sliders extends StatefulWidget {
 }
 
 class _SlidersState extends State<_Sliders> {
-  double slider1 = 0;
-  double slider2 = 0;
-  double slider3 = 0;
+  double slider1 = 5e0;
+  double slider2 = 2e2;
+  double slider3 = 1e-5;
 
   final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    double range = context.watch<HomeModel>().range.toDouble();
+    // double range = context.watch<HomeModel>().range.toDouble();
     return ConstrainedBox(
       constraints: const BoxConstraints(
-        maxWidth: 400,
+        maxWidth: 500,
       ),
       child: Column(
         children: <Widget>[
           const Text('Content weight'),
           Slider(
             value: slider1,
-            min: -range,
-            max: range,
+            min: 1e-5,
+            max: 1e2,
             label: slider1.round().toString(),
-            divisions: range ~/ 10,
+            divisions: 1000,
             onChanged: (value) {
               setState(() {
                 slider1 = value;
@@ -335,37 +359,37 @@ class _SlidersState extends State<_Sliders> {
             },
           ),
           const SizedBox(height: 10),
-          const Text('TV weight'),
+          const Text('Style weight'),
           Slider(
             value: slider2,
-            min: -range,
-            max: range,
+            min: 1e-5,
+            max: 1e4,
             label: slider2.round().toString(),
-            divisions: range ~/ 10,
+            divisions: 1000,
             onChanged: (value) {
               setState(() {
                 slider2 = value;
               });
             },
             onChangeEnd: (value) {
-              context.read<HomeModel>().tvWeight = value;
+              context.read<HomeModel>().styleWeight = value;
             },
           ),
           const SizedBox(height: 10),
-          const Text('Style weight'),
+          const Text('TV weight'),
           Slider(
             value: slider3,
-            min: -range,
-            max: range,
-            label: slider3.round().toString(),
-            divisions: range ~/ 10,
+            min: 1e-5,
+            max: 1e1,
+            label: slider3.toString(),
+            divisions: 1000,
             onChanged: (value) {
               setState(() {
                 slider3 = value;
               });
             },
             onChangeEnd: (value) {
-              context.read<HomeModel>().styleWeight = value;
+              context.read<HomeModel>().tvWeight = value;
             },
           ),
         ],
