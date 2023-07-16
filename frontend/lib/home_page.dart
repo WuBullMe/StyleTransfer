@@ -98,8 +98,8 @@ class _SelectImagesColumnState extends State<_SelectImagesColumn> {
                 builder: (context) {
                   return AlertDialog(
                     title: const Text('Too high resolution'),
-                    content:
-                        Text('Your image resolution was set to ${width}x$height'),
+                    content: Text(
+                        'Your image resolution was set to ${width}x$height'),
                     actions: <Widget>[
                       TextButton(
                         onPressed: () {
@@ -246,8 +246,8 @@ class _SizeSelectors extends StatelessWidget {
                 if (value == null) return null;
                 try {
                   int res = int.parse(value);
-                  if (res < 256 || res > 1920) {
-                    return 'from 256 to 1920';
+                  if (res < 256 || res > 1024) {
+                    return 'from 256 to 1024';
                   }
                   return null;
                 } catch (_) {
@@ -273,8 +273,8 @@ class _SizeSelectors extends StatelessWidget {
                 if (value == null) return null;
                 try {
                   int res = int.parse(value);
-                  if (res < 256 || res > 1080) {
-                    return 'from 256 to 1080';
+                  if (res < 256 || res > 1024) {
+                    return 'from 256 to 1024';
                   }
                   return null;
                 } catch (_) {

@@ -16,15 +16,31 @@ class HomeModel extends ChangeNotifier {
   Uint8List? _content;
   Uint8List? _style;
   Uint8List? _result;
-  int width = 512;
-  int height = 512;
+  int _width = 512;
+  int _height = 512;
   int epochs = 100;
   int range = 1000;
+  (String, String) id = ("-1", "-1");
   double contentWeight = 5e0;
   double tvWeight = 1e-5;
   double styleWeight = 2e2;
+  bool sizes = true;
 
   HomeModel(Service service) : _service = service;
+
+  int get width => _width;
+
+  int get height => _height;
+
+  set width(int w) {
+    _width = w;
+    sizes = true;
+  }
+
+  set height(int h) {
+    _height = h;
+    sizes = true;
+  }
 
   Uint8List? get content => _content;
 
@@ -38,8 +54,8 @@ class HomeModel extends ChangeNotifier {
       var (w, h) = _getImageSize(bytes);
       width = w;
       height = h;
-      if (w > 1920 || h > 1080) {
-        int F = max((w / 1920).ceil(), (h / 1080).ceil());
+      if (w > 1024 || h > 1024) {
+        int F = max((w / 1024).ceil(), (h / 1024).ceil());
         width = (width / F).floor();
         height = (height / F).floor();
         _content = _resize(_content!, width, height);
@@ -53,10 +69,11 @@ class HomeModel extends ChangeNotifier {
 
   set style(Uint8List? bytes) {
     _style = bytes;
+    sizes = true;
     if (bytes != null) {
       var (w, h) = _getImageSize(bytes);
-      if (w > 1920 || h > 1080) {
-        int F = max((w / 1920).ceil(), (h / 1080).ceil());
+      if (w > 1024 || h > 1024) {
+        int F = max((w / 1024).ceil(), (h / 1024).ceil());
         _style = _resize(_style!, (w / F).floor(), (h / F).floor());
       }
       widthController.text = width.toString();
@@ -74,18 +91,33 @@ class HomeModel extends ChangeNotifier {
   }
 
   Future<void> submit() async {
-    var content = _resize(_content!, width, height);
-    var style = _resize(_style!, width, height);
-    _result = await _service.submit(
-      content: content,
-      style: style,
-      width: width,
-      height: height,
-      epochs: epochs,
-      contentWeight: contentWeight,
-      tvWeight: tvWeight,
-      styleWeight: styleWeight,
-    );
+    if (!sizes) {
+      var (result, i) = await _service.submitLite(
+        width: width,
+        height: height,
+        epochs: epochs,
+        contentWeight: contentWeight,
+        tvWeight: tvWeight,
+        styleWeight: styleWeight,
+        id: id,
+      );
+      id = i;
+      _result = result;
+    } else {
+      sizes = false;
+      var (result, i) = await _service.submit(
+        content: _content!,
+        style: _style!,
+        width: width,
+        height: height,
+        epochs: epochs,
+        contentWeight: contentWeight,
+        tvWeight: tvWeight,
+        styleWeight: styleWeight,
+      );
+      id = i;
+      _result = result;
+    }
     notifyListeners();
   }
 
