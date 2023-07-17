@@ -16,7 +16,7 @@ from .train import train
 from .utils import print_log
 
 __version__ = "1.0.0"
-__name__ = "style_transfer_model"
+__name__ = "neural_style_transfer"
 
 def style_transfer(
     content_image,
