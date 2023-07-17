@@ -33,15 +33,15 @@ def home():
 async def style_transfer(
         content_image: str = File(...),
         style_image: str = File(...),
-        image_height: int = 256,
-        image_width: Union[int, None] = 256,
+        image_height: int = 512,
+        image_width: Union[int, None] = 512,
         timeout_sec: int = 5,
-        epochs: int = 500,
+        epochs: int = 30,
         content_weight: Union[int, float] = 5e0,
         style_weight: Union[int, float] = 2e2,
-        tv_weight: Union[int, float] = 1e-5,
+        alpha: Union[int, float] = 1,
         model_name: str = None,
-    ):
+):
     utils.clean()
     # decode the received images 
     try:
@@ -78,7 +78,7 @@ async def style_transfer(
             epochs=epochs,
             content_weight=content_weight,
             style_weight=style_weight,
-            tv_weight=tv_weight,
+            alpha=alpha,
             logs=utils.logs,
             from_path=utils.from_path,
         )
@@ -90,11 +90,10 @@ async def style_transfer(
         }
     
     # remove useless parameters from `params`
-    params.pop('content_losses', None)
-    params.pop('style_losses', None)
-    params.pop('tv_losses', None)
     params.pop('logs', None)
     params.pop('from_path', None)
+    params.pop('train', None)
+    params.pop('save_network', None)
     
     
     # change some `params` to avoid `ValueError` exception, while trying to
@@ -117,13 +116,13 @@ async def test_style_transfer(
         parse_image: bool = True,
         content_image: UploadFile = File(...),
         style_image: UploadFile = File(...),
-        image_height: int = 256,
-        image_width: Union[int, None] = 256,
+        image_height: int = 512,
+        image_width: Union[int, None] = 512,
         timeout_sec: int = 5,
-        epochs: int = 500,
+        epochs: int = 30,
         content_weight: Union[int, float] = 5e0,
         style_weight: Union[int, float] = 2e2,
-        tv_weight: Union[int, float] = 1e-5,
+        alpha: Union[int, float] = 1,
         model_name: str = None,
     ):
     utils.clean()
@@ -146,7 +145,7 @@ async def test_style_transfer(
         epochs=epochs,
         content_weight=content_weight,
         style_weight=style_weight,
-        tv_weight=tv_weight,
+        alpha=alpha,
         model_name=model_name,
     )
     
@@ -161,27 +160,36 @@ async def test_style_transfer(
     return FileResponse(image_name)
 
 
-@app.get("/change_weights")
+@app.post("/change_weights")
 async def change_weights(
         content_id: str,
         style_id: str,
-        image_height: int = 256,
-        image_width: Union[int, None] = 256,
+        image_height: int = 512,
+        image_width: Union[int, None] = 512,
         timeout_sec: int = 5,
-        epochs: int = 500,
+        epochs: int = 30,
         content_weight: Union[int, float] = 5e0,
         style_weight: Union[int, float] = 2e2,
-        tv_weight: Union[int, float] = 1e-5,
+        alpha: Union[int, float] = 1,
         model_name: str = None,
     ):
     utils.clean()
+    try:
+        utils.check_id(content_id)
+        utils.check_id(style_id)
+    except Exception as e:
+        return {
+            'status': 'failed',
+            'msg': 'incorrect id',
+            'error': str(e),
+        }
     content_path = utils.root + content_id + ".png"
     style_path = utils.root + style_id + ".png"
     
     image_size = (image_height, image_width)
     if image_width is None:
         image_size = (image_height, image_height)
-    
+
     try:
         result_image, params = model.style_transfer(
             content_image=content_path,
@@ -191,7 +199,7 @@ async def change_weights(
             epochs=epochs,
             content_weight=content_weight,
             style_weight=style_weight,
-            tv_weight=tv_weight,
+            alpha=alpha,
             logs=utils.logs,
             from_path=True,
         )
@@ -201,19 +209,19 @@ async def change_weights(
             'msg': 'got some exception while trying to transfer style of the given image',
             'error': str(e),
         }
-    
+
     # remove useless parameters from `params`
     params.pop('content_losses', None)
     params.pop('style_losses', None)
     params.pop('tv_losses', None)
     params.pop('logs', None)
     params.pop('from_path', None)
-    
-    
+
+
     # change some `params` to avoid `ValueError` exception, while trying to
     # call the `__dict__` for the object that is not json serializable
     params['device'] = params['device'].type
-    
+
     return {
         'status': 'ok',
         'msg': 'successfuly transfered the style of the image',

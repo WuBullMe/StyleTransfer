@@ -34,6 +34,11 @@ def decode_from_base64(image: str, save=False):
     return image, image_id, image_name
 
 
+def check_id(image_id: str):
+    if not os.path.exists(os.path.join(root, image_id + ".png")):
+        raise ValueError(f"Could not find the id {image_id}, it's incorrect or removed!")
+    
+
 def get_new_id():
     return str(uuid.uuid4()) + ":" + str(int(time.time()))
 
