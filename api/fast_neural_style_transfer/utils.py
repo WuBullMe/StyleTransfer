@@ -40,15 +40,16 @@ def postprocess(output_tensor):
     return image
 
 
-def adjust_learning_rate(optimizer, lr, lr_decay, iteration_count):
-    lr /= (1 + lr_decay * iteration_count)
+def adjust_learning_rate(optimizer, cur_epochs, params):
+    lr = params['lr']
+    lr_decay = params['lr_decay']
+    lr /= (1 + lr_decay * cur_epochs)
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-        
+    
 
 def build_model(params):
     network = Network().to(params['device'])
-
     state = network.state_dict()
     
     new_encoder_state_values = iter(torch.load('fast_neural_style_transfer/models/vgg_normalised.pth').values())
@@ -59,41 +60,19 @@ def build_model(params):
             state[key] = next(new_encoder_state_values)
         elif key.startswith('decoder'):
             state[key] = next(new_decoder_state_values)
-            
+    
     network.load_state_dict(state)
+    
     return network
-
-
-def config_params(params):
-    params['lr'] = 4e-3
-    params['lr_decay'] = 5e-5
-    params['alpha'] = 1
     
-def eval(
-    network,
-    content_image,
-    style_image,
-    params,
-):
-    content_feats = network.encoder(content_image)
-    style_feats = network.encoder(style_image)
-    
-    network.eval()
-    with torch.no_grad():
-        stylized_feats = network.adain(content_feats, style_feats)
-        stylized_feats = stylized_feats * params['alpha'] + content_feats * (1 - params['alpha'])
-        gen_image = network.decoder(stylized_feats)
-    
-    return postprocess(gen_image)
-
 def setup_style_transfer(kwds):
     params = {}
     
     # add all parameters that kwds have
     params.update(kwds)
     
-    # image_size: default 256
-    params['image_size'] = check_param.image_size_(kwds.get('image_size', 256))
+    # image_size: default 512
+    params['image_size'] = check_param.image_size_(kwds.get('image_size', 512))
     
     # timeout_sec: default 5 sec
     params['timeout_sec'] = check_param.timeout_sec_(kwds.get('timeout_sec', 5))
@@ -101,32 +80,26 @@ def setup_style_transfer(kwds):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     params['device'] = check_param.device_(kwds.get('device', device))
     
-    # number of epochs: default 500
-    params['epochs'] = check_param.epochs_(kwds.get('epochs', 500))
+    # number of epochs: default 30
+    params['epochs'] = check_param.epochs_(kwds.get('epochs', 30))
     
     # content_weight: default 5
     params['content_weight'] = check_param.content_weight_(kwds.get('content_weight', 5e0))
     
-    # style_weight: default 1e3
-    params['style_weight'] = check_param.style_weight_(kwds.get('style_weight', 1e3))
+    # style_weight: default 2e2
+    params['style_weight'] = check_param.style_weight_(kwds.get('style_weight', 2e2))
     
-    # tv_weight: default 1e-5
-    params['tv_weight'] = check_param.tv_weight_(kwds.get('tv_weight', 1e-5))
-    
-    # content_layers: default 'relu4_2' (same as in article)
-    params['content_layers'] = check_param.content_layers_(kwds.get('content_layers', ('relu4_2')))
-    
-    # style_layers: default ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1'] (same as in article)
-    params['style_layers'] = check_param.style_layers_(kwds.get('style_layers', ('relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1')))
+    # alpha: default 1
+    params['alpha'] = check_param.alpha_(kwds.get('alpha', 1))
     
     # show logs while program is running or not: default False
     params['logs'] = check_param.logs_(kwds.get('logs', False))
     
-    params['steps_per_epoch'] = check_param.steps_per_epoch_(kwds.get('steps_per_epoch', 5), params['epochs'])
-    
     params['from_path'] = check_param.from_path_(kwds.get('from_path', True))
     
     params['save_network'] = check_param.save_network_(kwds.get('save_network', False))
+    
+    params['train'] = check_param.train_(kwds.get('train', True))
     
     return params
 

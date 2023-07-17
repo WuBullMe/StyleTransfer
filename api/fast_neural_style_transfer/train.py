@@ -10,13 +10,13 @@ def train(
     content_image,
     style_image,
     params,
-):
-    optimizer = torch.optim.Adam(network.decoder.parameters(), lr=params['lr_decay'])
+):  
+    optimizer = torch.optim.Adam(network.decoder.parameters(), lr=params['lr'])
     cur_epoch = 0
     start = time.time()
     for epoch in range(params['epochs']):
         optimizer.zero_grad()
-        adjust_learning_rate(optimizer, params['lr'], params['lr_decay'], iteration_count=epoch)
+        adjust_learning_rate(optimizer, epoch, params)
         content_loss, style_loss = network(content_image, style_image)
         total_loss = params['content_weight'] * content_loss + params['style_weight'] * style_loss
         total_loss.backward()
@@ -39,6 +39,24 @@ def train(
     params['completed_epochs'] = cur_epoch
     
     if params['save_network']:
-        torch.save(network.state_dict(), 'models/network.pth')
+        torch.save(network.state_dict(), f"fast_neural_style_transfer/models/network.pth")
     
     return network
+
+
+def evaluate(
+    network,
+    content_image,
+    style_image,
+    params,
+):
+    content_feats = network.encoder(content_image)
+    style_feats = network.encoder(style_image)
+    
+    network.eval()
+    with torch.no_grad():
+        stylized_feats = network.adain(content_feats, style_feats)
+        stylized_feats = stylized_feats * params['alpha'] + content_feats * (1 - params['alpha'])
+        gen_image = network.decoder(stylized_feats)
+    
+    return postprocess(gen_image)
