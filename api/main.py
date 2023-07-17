@@ -9,7 +9,7 @@ from PIL import Image
 import io
 
 import utils
-import model
+import fast_neural_style_transfer as model
 
 app = FastAPI()
 
