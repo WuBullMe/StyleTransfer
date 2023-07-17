@@ -21,7 +21,6 @@ __version__ = "1.0.0"
 __name__ = "fast_neural_style_transfer"
 
 model = None
-last_trained = None
 
 def style_transfer(
     content_image,
@@ -47,20 +46,16 @@ def style_transfer(
     params['lr'] = 1e-4
     params['lr_decay'] = 5e-5
     
-    global last_trained
-    if params['train'] or last_trained is None:
-        # train the network
-        network = deepcopy(model)
-        network = train(
-            network,
-            content_image,
-            style_image,
-            params,
-        )
-        last_trained = network
-    else:
-        network = last_trained
-
+    # train the network
+    network = deepcopy(model)
+    network = train(
+        network,
+        content_image,
+        style_image,
+        params,
+    )
+    last_trained = network
+    
     # eval the network
     gen_image = evaluate(
         network,

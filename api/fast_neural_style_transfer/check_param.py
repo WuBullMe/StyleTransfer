@@ -68,12 +68,6 @@ def logs_(logs):
     
     return logs
 
-def train_(train):
-    supported_types = (bool,)
-    _check_type(train, supported_types, "train")
-    
-    return train
-
 def save_network_(save_network_):
     supported_types = (bool,)
     _check_type(save_network_, supported_types, "save_network_")

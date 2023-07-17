@@ -99,8 +99,6 @@ def setup_style_transfer(kwds):
     
     params['save_network'] = check_param.save_network_(kwds.get('save_network', False))
     
-    params['train'] = check_param.train_(kwds.get('train', True))
-    
     return params
 
 def print_log(log, params, end="\n", cond=True):
