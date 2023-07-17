@@ -327,15 +327,14 @@ class _Sliders extends StatefulWidget {
 }
 
 class _SlidersState extends State<_Sliders> {
-  double slider1 = 5e0;
-  double slider2 = 2e2;
+  double slider1 = 1e0;
+  double slider2 = 1e1;
   double slider3 = 1e-5;
 
   final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    // double range = context.watch<HomeModel>().range.toDouble();
     return ConstrainedBox(
       constraints: const BoxConstraints(
         maxWidth: 500,
@@ -363,7 +362,7 @@ class _SlidersState extends State<_Sliders> {
           Slider(
             value: slider2,
             min: 1e-5,
-            max: 1e4,
+            max: 1e3,
             label: slider2.round().toString(),
             divisions: 1000,
             onChanged: (value) {
@@ -373,23 +372,6 @@ class _SlidersState extends State<_Sliders> {
             },
             onChangeEnd: (value) {
               context.read<HomeModel>().styleWeight = value;
-            },
-          ),
-          const SizedBox(height: 10),
-          const Text('TV weight'),
-          Slider(
-            value: slider3,
-            min: 1e-5,
-            max: 1e1,
-            label: slider3.toString(),
-            divisions: 1000,
-            onChanged: (value) {
-              setState(() {
-                slider3 = value;
-              });
-            },
-            onChangeEnd: (value) {
-              context.read<HomeModel>().tvWeight = value;
             },
           ),
         ],

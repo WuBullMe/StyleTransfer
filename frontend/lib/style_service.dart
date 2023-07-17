@@ -17,7 +17,7 @@ class StyleService implements Service {
     required double styleWeight,
   }) async {
     final uri = Uri.parse(
-        """http://0168-172-83-13-4.ngrok-free.app/style_transfer?image_height=$height&image_width=$width&epochs=$epochs&content_weight=$contentWeight&style_weight=$styleWeight&tv_weight=$tvWeight&timeout_sec=40""");
+        """https://2652-172-83-13-4.ngrok-free.app/style_transfer?image_height=$height&image_width=$width&epochs=$epochs&content_weight=$contentWeight&style_weight=$styleWeight&tv_weight=$tvWeight&timeout_sec=40""");
     var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     var request = http.Request('POST', uri);
     request.bodyFields = {
@@ -47,7 +47,7 @@ class StyleService implements Service {
       required (String, String) id}) async {
     
     final uri = Uri.parse(
-        """http://0168-172-83-13-4.ngrok-free.app/change_weights?content_id=${id.$1}&style_id=${id.$2}&image_height=$height&image_width=$width&epochs=$epochs&content_weight=$contentWeight&style_weight=$styleWeight&tv_weight=$tvWeight&timeout_sec=40""");
+        """https://2652-172-83-13-4.ngrok-free.app/change_weights?content_id=${id.$1}&style_id=${id.$2}&image_height=$height&image_width=$width&epochs=$epochs&content_weight=$contentWeight&style_weight=$styleWeight&tv_weight=$tvWeight&timeout_sec=40""");
     var headers = {'Content-Type': 'application/x-www-form-urlencoded'};
     var request = http.Request('POST', uri);
     request.headers.addAll(headers);

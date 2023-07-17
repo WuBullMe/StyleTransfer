@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 class HomeModel extends ChangeNotifier {
   final widthController = TextEditingController(text: '512');
   final heightController = TextEditingController(text: '512');
-  final epochsController = TextEditingController(text: '100');
+  final epochsController = TextEditingController(text: '30');
   final rangeController = TextEditingController(text: '1000');
 
   final Service _service;
@@ -18,12 +18,12 @@ class HomeModel extends ChangeNotifier {
   Uint8List? _result;
   int _width = 512;
   int _height = 512;
-  int epochs = 100;
+  int epochs = 30;
   int range = 1000;
   (String, String) id = ("-1", "-1");
-  double contentWeight = 5e0;
+  double contentWeight = 1e0;
   double tvWeight = 1e-5;
-  double styleWeight = 2e2;
+  double styleWeight = 1e1;
   bool sizes = true;
 
   HomeModel(Service service) : _service = service;
