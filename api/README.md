@@ -5,8 +5,16 @@
 
 We created a API that takes two image (content_image, style_image) and using the above idea trying to transfer the style of the second image onto first one.
 
-# Hyperparameters of the model
+# How to run the API
+1. Clone repository
+2. Go to `api` folder
+3. Install requirements
+4. Run `uvicorn main:app --reload`
+5. Open `http://127.0.0.1:8000/docs` in your browser
+6. If you want to try it with your own images use `/test_style_transfer` path
 
+
+# Hyperparameters of the model
 The API takes content and style image, and lots of different parameters (query), the main parameters you might want to change is `image_size`, `timeout_sec`, `content_weight`, `style_weight`, `tv_weight`, `epochs`. You can find full list of parameters in `model.utils:setup_style_transfer()`.
 
 # Demonstration
